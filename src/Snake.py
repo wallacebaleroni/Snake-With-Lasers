@@ -23,12 +23,15 @@ class Snake:
     pos_x = 0
     pos_y = 0
 
-    def __init__(self, window_h, window_w, pos_x=50, pos_y=50):
+    def __init__(self, window_h, window_w, grid_size, pos_x=50, pos_y=50):
         self.pos_x = pos_x
         self.pos_y = pos_y
 
         self.window_h = window_h
         self.window_w = window_w
+
+        self.grid_pace_y = window_h / grid_size
+        self.grid_pace_x = window_w / grid_size
 
         self.sprite = Sprite("img\snake_temp.png", 1)
         self.sprite.set_total_duration(1000)
@@ -44,13 +47,13 @@ class Snake:
         self.check_border()
 
         if self.direction == CONST_UP:
-            self.pos_y -= self.speed
+            self.pos_y -= self.speed * self.grid_pace_y
         elif self.direction == CONST_DOWN:
-            self.pos_y += self.speed
+            self.pos_y += self.speed * self.grid_pace_y
         elif self.direction == CONST_LEFT:
-            self.pos_x -= self.speed
+            self.pos_x -= self.speed * self.grid_pace_x
         elif self.direction == CONST_RIGHT:
-            self.pos_x += self.speed
+            self.pos_x += self.speed * self.grid_pace_X
 
         self.sprite.set_position(self.pos_x, self.pos_y)
 
