@@ -16,7 +16,7 @@ def main():
 
     # Game loop
     while True:
-        snake.run(game_window.total_time)
+        #snake.run(game_window.total_time)
 
         game_window.set_background_color((0, 0, 0))
         snake.draw()
