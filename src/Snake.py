@@ -8,17 +8,16 @@ CONST_DOWN = 2
 CONST_LEFT = 3
 CONST_RIGHT = 4
 
-CONST_SPRITE_W = 25
-CONST_SPRITE_H = 25
+CONST_SPRITE_W = 20
+CONST_SPRITE_H = 20
 
 X = 0
 Y = 1
 
-global CONST_GRID_SIZE_X
-global CONST_GRID_SIZE_Y
-
-global CONST_GRID_LENGHT_X
-global CONST_GRID_LENGHT_Y
+CONST_GRID_SIZE_X = 0
+CONST_GRID_SIZE_Y = 0
+CONST_GRID_LENGHT_X = 0
+CONST_GRID_LENGHT_Y = 0
 
 
 class Snake:
@@ -45,11 +44,17 @@ class Snake:
     last_append = 0
 
     def __init__(self, window_w, window_h, size_grid_x, size_grid_y):
+        global CONST_GRID_SIZE_X
+        global CONST_GRID_SIZE_Y
+
+        global CONST_GRID_LENGHT_X
+        global CONST_GRID_LENGHT_Y
+
         CONST_GRID_SIZE_X = size_grid_x
         CONST_GRID_SIZE_Y = size_grid_y
 
-        LENGHT_GRID_X = window_w / size_grid_x
-        LENGHT_GRID_Y = window_h / size_grid_y
+        CONST_GRID_LENGHT_X = window_w / size_grid_x
+        CONST_GRID_LENGHT_Y = window_h / size_grid_y
 
         self.pos_grid = [int(size_grid_x / 2), int(size_grid_y / 2)]
 
@@ -58,7 +63,7 @@ class Snake:
         self.window_h = window_h
         self.window_w = window_w
 
-        self.sprite = Sprite("img\snake_temp.png", 1)
+        self.sprite = Sprite("../img/snake_temp.png", 1)
         self.sprite.set_total_duration(1000)
 
         self.bodies.append(Body(CONST_RIGHT, 50, 50))
@@ -91,13 +96,13 @@ class Snake:
         self.sprite.set_position(self.pos_pixel[X], self.pos_pixel[Y])
 
     def check_border(self):
-        if self.pos_pixel[X] <= 0:
+        if self.pos_pixel[X] < 0:
             self.direction = CONST_RIGHT
-        elif self.pos_pixel[X] + CONST_SPRITE_W >= self.window_w:
+        elif self.pos_pixel[X] + CONST_SPRITE_W > self.window_w:
             self.direction = CONST_LEFT
-        elif self.pos_pixel[Y] <= 0:
+        elif self.pos_pixel[Y] < 0:
             self.direction = CONST_DOWN
-        elif self.pos_pixel[Y] + CONST_SPRITE_H >= self.window_h:
+        elif self.pos_pixel[Y] + CONST_SPRITE_H > self.window_h:
             self.direction = CONST_UP
 
     def get_input(self):
@@ -127,8 +132,10 @@ class Snake:
     def get_size(self):
         return len(self.bodies)
 
-    def to_pixel(self, pos_grid):
+    @staticmethod
+    def to_pixel(pos_grid):
         return [pos_grid[X] * CONST_GRID_LENGHT_X, pos_grid[Y] * CONST_GRID_LENGHT_Y]
 
-    def to_grid(self, pos_pixel):
+    @staticmethod
+    def to_grid(pos_pixel):
         return [pos_pixel[X] / CONST_GRID_LENGHT_X, pos_pixel[Y] / CONST_GRID_LENGHT_Y]
