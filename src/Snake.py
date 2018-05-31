@@ -1,6 +1,5 @@
 from PPlay.keyboard import *
 from PPlay.sprite import *
-from src.Body import *
 
 # Directions constraints
 CONST_UP = 0
@@ -34,14 +33,6 @@ CONST_TAIL_PATH = "..\img\/tail.png"
 CONST_LASER_PATH = "..\img\/laser.png"
 
 
-def to_grid(pos_pixel):
-    return [pos_pixel[X] / CONST_GRID_LENGTH_X, pos_pixel[Y] / CONST_GRID_LENGTH_Y]
-
-
-def to_pixel(pos_grid):
-    return [pos_grid[X] * CONST_GRID_LENGTH_X, pos_grid[Y] * CONST_GRID_LENGTH_Y]
-
-
 class Snake:
     # Objetos do PPlay/janela
     window_w = None
@@ -50,7 +41,7 @@ class Snake:
     keyboard = None
 
     # Variaveis de espaco
-    speed = 100
+    speed = 200
 
     # Corpo da cobra
     bodies = []
@@ -195,14 +186,21 @@ class Snake:
         for i in range(len(self.bodies) - 1, -1, -1):
             # If it's the neck (i.e. first body part after head)
             if i == 0:
-                frame = self.decide_frame(self.bodies[i].direction, self.head.direction)
+                frame = decide_bodies_frames(self.bodies[i].direction, self.head.direction)
                 self.bodies[i].set_curr_frame(frame)
                 self.bodies[i].direction = self.head.direction
             # Rest of the body
             else:
-                frame = self.decide_frame(self.bodies[i].direction, self.bodies[i - 1].direction)
+                frame = decide_bodies_frames(self.bodies[i].direction, self.bodies[i - 1].direction)
                 self.bodies[i].set_curr_frame(frame)
                 self.bodies[i].direction = self.bodies[i - 1].direction
+
+    def increase_size(self):
+        # TODO improve it
+        if self.increase_size_flag:
+            self.bodies.append(Body(Sprite(CONST_BODY_PATH, 8), CONST_UP, self.head.pos_grid))
+
+            self.increase_size_flag = False
 
     def shot(self):
         if self.shot_flag and self.current_time - self.last_shot >= self.shot_cadence:
@@ -234,32 +232,30 @@ class Snake:
         for i in range(len(self.shots)):
             self.shots[i].draw()
 
-    def increase_size(self):
-        # TODO improve it
-        if self.increase_size_flag:
-            self.bodies.append(Body(Sprite(CONST_BODY_PATH, 8), CONST_UP, self.head.pos_grid))
 
-            self.increase_size_flag = False
+def decide_bodies_frames(curr, next):
+    if curr == next:
+        return curr
+    elif (curr == CONST_UP and next == CONST_RIGHT
+            or curr == CONST_LEFT and next == CONST_DOWN):
+        return CONST_DOWN_RIGHT
+    elif (curr == CONST_RIGHT and next == CONST_DOWN
+          or curr == CONST_UP and next == CONST_LEFT):
+        return CONST_DOWN_LEFT
+    elif (curr == CONST_RIGHT and next == CONST_UP
+          or curr == CONST_DOWN and next == CONST_LEFT):
+        return CONST_UP_LEFT
+    elif (curr == CONST_DOWN and next == CONST_RIGHT
+          or curr == CONST_LEFT and next == CONST_UP):
+        return CONST_UP_RIGHT
 
-    def get_size(self):
-        return len(self.bodies)
 
-    @staticmethod
-    def decide_frame(curr, next):
-        if curr == next:
-            return curr
-        elif (curr == CONST_UP and next == CONST_RIGHT
-                or curr == CONST_LEFT and next == CONST_DOWN):
-            return CONST_DOWN_RIGHT
-        elif (curr == CONST_RIGHT and next == CONST_DOWN
-              or curr == CONST_UP and next == CONST_LEFT):
-            return CONST_DOWN_LEFT
-        elif (curr == CONST_RIGHT and next == CONST_UP
-              or curr == CONST_DOWN and next == CONST_LEFT):
-            return CONST_UP_LEFT
-        elif (curr == CONST_DOWN and next == CONST_RIGHT
-              or curr == CONST_LEFT and next == CONST_UP):
-            return CONST_UP_RIGHT
+def to_grid(pos_pixel):
+    return [pos_pixel[X] / CONST_GRID_LENGTH_X, pos_pixel[Y] / CONST_GRID_LENGTH_Y]
+
+
+def to_pixel(pos_grid):
+    return [pos_grid[X] * CONST_GRID_LENGTH_X, pos_grid[Y] * CONST_GRID_LENGTH_Y]
 
 
 class Body:
