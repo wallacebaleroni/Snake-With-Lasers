@@ -216,9 +216,10 @@ class Snake:
             self.shots[i].run(self.current_time)
 
         # Shots cleaning
-        for i in range(len(self.shots)):
-            if self.shots[i].sprite.x >= CONST_WINDOW_W:
-                pass
+        for shot in self.shots:
+            if (shot.sprite.x >= CONST_WINDOW_W or shot.sprite.x <= 0 or
+                    shot.sprite.y >= CONST_WINDOW_H or shot.sprite.y <= 0):
+                self.shots.remove(shot)
 
     def draw(self):
         # Draw head
