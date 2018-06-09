@@ -1,5 +1,8 @@
 from PPlay.keyboard import *
 from PPlay.sprite import *
+from PPlay.collision import *
+
+import random
 
 # Directions constraints
 CONST_UP = 0
@@ -14,6 +17,9 @@ CONST_UP_RIGHT = 7
 
 CONST_SPRITE_W = 25
 CONST_SPRITE_H = 25
+
+CONST_PLUS_ONE = 1
+CONST_SPEED_DOWN = 2
 
 X = 0
 Y = 1
@@ -31,6 +37,8 @@ CONST_HEAD_PATH = "..\img\head.png"
 CONST_BODY_PATH = "..\img\/body.png"
 CONST_TAIL_PATH = "..\img\/tail.png"
 CONST_LASER_PATH = "..\img\/laser.png"
+CONST_BLOCK_PATH = "..\img\/block.png"
+CONST_PLUS_ONE_PATH = "..\img\/plus_one.png"
 
 
 class Snake:
@@ -88,6 +96,11 @@ class Snake:
         self.last_move = 0
         self.last_append = 0
         self.last_shot = 0
+        self.last_spawn = 0
+
+        # Blocks variables
+        self.blocks = []
+        self.block_spawn_time = 5000
 
         # Shots variables
         self.shots = []
@@ -99,13 +112,14 @@ class Snake:
         self.get_input()
         # Checks if the necessary time has already passed
         if self.current_time - self.last_move >= self.speed:
-            self.check_borders()
             self.move()
+            self.check_borders()
 
             self.last_move = self.current_time  # Updates last move
             self.direction_input_got = False  # Allowed to get the next input
         # TODO: interactions()
         self.increase_size()
+        self.spawn_blocks()
         self.shot()
 
     def get_input(self):
@@ -136,13 +150,13 @@ class Snake:
 
     def check_borders(self):
         if self.head.pos_grid[X] < 0:
-            self.head.pos_grid[X] = 20
+            self.head.pos_grid[X] = 19
             self.head.pos_pixel = to_pixel(self.head.pos_grid)
         elif self.head.pos_grid[X] >= CONST_GRID_SIZE_X:
             self.head.pos_grid[X] = -1
             self.head.pos_pixel = to_pixel(self.head.pos_grid)
         elif self.head.pos_grid[Y] < 0:
-            self.head.pos_grid[Y] = 20
+            self.head.pos_grid[Y] = 19
             self.head.pos_pixel = to_pixel(self.head.pos_grid)
         elif self.head.pos_grid[Y] >= CONST_GRID_SIZE_Y:
             self.head.pos_grid[Y] = -1
@@ -202,7 +216,51 @@ class Snake:
 
             self.increase_size_flag = False
 
+    def spawn_blocks(self):
+        if self.current_time - self.last_spawn >= self.block_spawn_time:
+            valid = False
+            # Generates a random valid position
+            rand_pos_x = 0
+            rand_pos_y = 0
+            while not valid:
+                valid = True
+                # Chooses a random coordinate
+                rand_pos_x = random.randint(0, CONST_GRID_LENGTH_X)
+                rand_pos_y = random.randint(0, CONST_GRID_LENGTH_Y)
+
+                # Checks if it isn't in the line of movement of the snake
+                snake_direction = self.head.direction
+                snake_pos_x = self.head.pos_grid[X]
+                snake_pos_y = self.head.pos_grid[Y]
+                if snake_direction == CONST_UP and rand_pos_x == snake_pos_x and rand_pos_y <= snake_pos_y:
+                    valid = False
+                if snake_direction == CONST_DOWN and rand_pos_x == snake_pos_x and rand_pos_y >= snake_pos_y:
+                    valid = False
+                if snake_direction == CONST_LEFT and rand_pos_y == snake_pos_y and rand_pos_x <= snake_pos_x:
+                    valid = False
+                if snake_direction == CONST_RIGHT and rand_pos_y == snake_pos_y and rand_pos_x >= snake_pos_x:
+                    valid = False
+
+                # Checks if it isn't over the snake's body
+                for body in self.bodies:
+                    if body.pos_grid[X] == rand_pos_x and body.pos_grid[Y] == rand_pos_y and valid:
+                        valid = False
+
+                # Checks if it ins't over another block
+                for block in self.blocks:
+                    if block.pos_grid[X] == rand_pos_x and block.pos_grid[Y] == rand_pos_y and valid:
+                        valid = False
+
+            # TODO: Randomize if it's a power up
+
+            # Creates the block
+            new_block = Block([rand_pos_x, rand_pos_y])
+            self.blocks.append(new_block)
+
+            self.last_spawn = self.current_time
+
     def shot(self):
+        # Checks the need of creating a shot
         if self.shot_flag and self.current_time - self.last_shot >= self.shot_cadence:
             # Create shot sprite
             new_shot = Laser(self.head, self.current_time)
@@ -212,8 +270,16 @@ class Snake:
             self.last_shot = self.current_time
 
         # Move shots
-        for i in range(len(self.shots)):
-            self.shots[i].run(self.current_time)
+        for shot in self.shots:
+            shot.run(self.current_time)
+
+        # Check block hits
+        for shot in self.shots:
+            for block in self.blocks:
+                if not block.destroyed:
+                    if Collision.collided(shot.sprite, block.sprite):
+                        self.shots.remove(shot)
+                        block.destroy()
 
         # Shots cleaning
         for shot in self.shots:
@@ -225,13 +291,16 @@ class Snake:
         # Draw head
         self.head.draw()
         # Draw bodies
-        for i in range(len(self.bodies)):
-            self.bodies[i].draw()
+        for body in self.bodies:
+            body.draw()
         # Draw tail
         self.tail.draw()
+        # Draw blocks
+        for block in self.blocks:
+            block.draw()
         # Draw shots
-        for i in range(len(self.shots)):
-            self.shots[i].draw()
+        for shot in self.shots:
+            shot.draw()
 
 
 def decide_bodies_frames(curr, next):
@@ -274,6 +343,8 @@ class Body:
         self.sprite.set_position(self.pos_pixel[X], self.pos_pixel[Y])
 
     def set_position(self, x, y):
+        self.pos_pixel = [x, y]
+        self.pos_grid = to_grid(self.pos_pixel)
         self.sprite.set_position(x, y)
 
     def set_curr_frame(self, frame):
@@ -347,3 +418,24 @@ class Laser:
 
     def draw(self):
         self.sprite.draw()
+
+
+class Block:
+    def __init__(self, pos_grid):
+        self.pos_grid = pos_grid
+        self.pos_pixel = to_pixel(pos_grid)
+
+        self.sprite = Sprite(CONST_BLOCK_PATH, 1)
+        self.sprite.set_position(self.pos_pixel[X], self.pos_pixel[Y])
+
+        self.destroyed = False
+
+        self.type = CONST_PLUS_ONE
+
+    def draw(self):
+        self.sprite.draw()
+
+    def destroy(self):
+        self.destroyed = True
+        self.sprite = Sprite(CONST_PLUS_ONE_PATH, 1)
+        self.sprite.set_position(self.pos_pixel[X], self.pos_pixel[Y])
