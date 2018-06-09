@@ -88,7 +88,6 @@ class Snake:
 
         # Flags
         self.direction_input_got = False
-        self.increase_size_flag = False
         self.shot_flag = False
 
         # Time variables
@@ -106,6 +105,9 @@ class Snake:
         self.shots = []
         self.shot_cadence = 200
 
+        # Game Over flag
+        self.game_over = False
+
     def run(self, total_time):
         self.current_time = total_time
 
@@ -114,13 +116,18 @@ class Snake:
         if self.current_time - self.last_move >= self.speed:
             self.move()
             self.check_borders()
+            # TODO: self.check_collision()
+            # TODO: self.check_wall()
 
-            self.last_move = self.current_time  # Updates last move
-            self.direction_input_got = False  # Allowed to get the next input
-        # TODO: interactions()
-        self.increase_size()
+            # Updates last move
+            self.last_move = self.current_time
+            # Allowed to get the next input
+            self.direction_input_got = False
+        self.interactions()
         self.spawn_blocks()
         self.shot()
+
+        # return self.game_over
 
     def get_input(self):
         if not self.direction_input_got:
@@ -137,12 +144,6 @@ class Snake:
             elif self.keyboard.key_pressed("d") and self.head.direction != CONST_LEFT:
                 self.direction_input_got = True
                 self.head.direction = CONST_RIGHT
-
-            # Temporary key to increase size
-            if self.keyboard.key_pressed("k"):
-                if self.current_time - self.last_append >= 500:
-                    self.increase_size_flag = True
-                    self.last_append = self.current_time
 
         # Shot key
         if self.keyboard.key_pressed("space"):
@@ -209,12 +210,28 @@ class Snake:
                 self.bodies[i].set_curr_frame(frame)
                 self.bodies[i].direction = self.bodies[i - 1].direction
 
-    def increase_size(self):
-        # TODO improve it
-        if self.increase_size_flag:
-            self.bodies.append(Body(Sprite(CONST_BODY_PATH, 8), CONST_UP, self.head.pos_grid))
+    def interactions(self):
+        # Checks interaction with blocks
+        for block in self.blocks:
+            if self.head.pos_grid == block.pos_grid:
+                # Snake will eat it
+                if block.destroyed:
+                    self.increase_size()
+                    self.blocks.remove(block)
+                # Snake dies
+                else:
+                    self.game_over = True
 
-            self.increase_size_flag = False
+    def increase_size(self):
+        # Get tail position then shift it
+        tail_pos_grid = [self.tail.pos_grid[X], self.tail.pos_grid[Y]]
+        tail_direction = self.tail.direction
+        self.tail.move_back()
+
+        sprite = Sprite(CONST_BODY_PATH, 8)
+        sprite.set_curr_frame(tail_direction)
+        new_body = Body(sprite, tail_direction, tail_pos_grid)
+        self.bodies.append(new_body)
 
     def spawn_blocks(self):
         if self.current_time - self.last_spawn >= self.block_spawn_time:
@@ -340,6 +357,18 @@ class Body:
         self.pos_grid = pos_grid
         self.pos_pixel = to_pixel(pos_grid)
 
+        self.sprite.set_position(self.pos_pixel[X], self.pos_pixel[Y])
+
+    def move_back(self):
+        if self.direction == CONST_UP:
+            self.pos_grid[Y] += 1
+        elif self.direction == CONST_DOWN:
+            self.pos_grid[Y] -= 1
+        elif self.direction == CONST_LEFT:
+            self.pos_grid[X] += 1
+        elif self.direction == CONST_RIGHT:
+            self.pos_grid[X] -= 1
+        self.pos_pixel = to_pixel(self.pos_grid)
         self.sprite.set_position(self.pos_pixel[X], self.pos_pixel[Y])
 
     def set_position(self, x, y):
