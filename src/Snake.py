@@ -38,8 +38,10 @@ CONST_HEAD_PATH = "..\img\head.png"
 CONST_BODY_PATH = "..\img\/body.png"
 CONST_TAIL_PATH = "..\img\/tail.png"
 CONST_LASER_PATH = "..\img\/laser.png"
+CONST_SUPER_LASER_PATH = "..\img\/slaser.png"
 CONST_BLOCK_PATH = "..\img\/block.png"
 CONST_PLUS_ONE_PATH = "..\img\/plus_one.png"
+CONST_POWER_UP_PATH = "..\img\/pup.png"
 
 
 class Snake:
@@ -112,11 +114,12 @@ class Snake:
 
         # Blocks variables
         self.blocks = []
-        self.block_spawn_time = 5000
+        self.block_spawn_time = 2000
 
         # Shots variables
         self.shots = []
         self.shot_cadence = 200
+        self.super_laser_active = False
 
         # Game Over flag
         self.game_over = False
@@ -241,7 +244,10 @@ class Snake:
             if self.head.pos_grid == block.pos_grid:
                 # Snake will eat it
                 if block.destroyed:
-                    self.increase_size()
+                    if block.power_up:
+                        self.super_laser_active = True
+                    else:
+                        self.increase_size()
                     self.blocks.remove(block)
                 # Snake dies
                 else:
@@ -268,8 +274,8 @@ class Snake:
             while not valid:
                 valid = True
                 # Chooses a random coordinate
-                rand_pos_x = random.randint(0, CONST_GRID_LENGTH_X)
-                rand_pos_y = random.randint(0, CONST_GRID_LENGTH_Y)
+                rand_pos_x = random.randint(0, CONST_GRID_LENGTH_X - 1)
+                rand_pos_y = random.randint(0, CONST_GRID_LENGTH_Y - 1)
 
                 # Checks if it's not on the walls
                 if (rand_pos_x == 0 or rand_pos_x == CONST_GRID_SIZE_X - 1
@@ -299,10 +305,13 @@ class Snake:
                     if block.pos_grid[X] == rand_pos_x and block.pos_grid[Y] == rand_pos_y and valid:
                         valid = False
 
-            # TODO: Randomize if it's a power up
+            # 25% chance of being a power up
+            power_up = False
+            if random.randint(0, 3) == 0:
+                power_up = True
 
             # Creates the block
-            new_block = Block([rand_pos_x, rand_pos_y])
+            new_block = Block([rand_pos_x, rand_pos_y], power_up)
             self.blocks.append(new_block)
 
             self.last_spawn = self.current_time
@@ -311,7 +320,7 @@ class Snake:
         # Checks the need of creating a shot
         if self.shot_flag and self.current_time - self.last_shot >= self.shot_cadence:
             # Create shot sprite
-            new_shot = Laser(self.head, self.current_time)
+            new_shot = Laser(self.head, self.current_time, self.super_laser_active)
             self.shots.append(new_shot)
             # Create it in front of the head
             self.shot_flag = False
@@ -425,9 +434,12 @@ class Body:
 
 
 class Laser:
-    def __init__(self, head: Body, current_time):
+    def __init__(self, head: Body, current_time, super_laser):
         # Initializations
-        self.sprite = Sprite(CONST_LASER_PATH, 8)
+        if super_laser:
+            self.sprite = Sprite(CONST_SUPER_LASER_PATH, 1)
+        else:
+            self.sprite = Sprite(CONST_LASER_PATH, 8)
         self.direction = head.direction
 
         # Sets apropriate frame
@@ -491,11 +503,15 @@ class Laser:
 
 
 class Block:
-    def __init__(self, pos_grid):
+    def __init__(self, pos_grid, power_up):
         self.pos_grid = pos_grid
         self.pos_pixel = to_pixel(pos_grid)
 
-        self.sprite = Sprite(CONST_BLOCK_PATH, 1)
+        self.power_up = power_up
+        if power_up:
+            self.sprite = Sprite(CONST_POWER_UP_PATH, 1)
+        else:
+            self.sprite = Sprite(CONST_BLOCK_PATH, 1)
         self.sprite.set_position(self.pos_pixel[X], self.pos_pixel[Y])
 
         self.destroyed = False
@@ -507,5 +523,6 @@ class Block:
 
     def destroy(self):
         self.destroyed = True
+        # TODO: power up destroyed
         self.sprite = Sprite(CONST_PLUS_ONE_PATH, 1)
         self.sprite.set_position(self.pos_pixel[X], self.pos_pixel[Y])
