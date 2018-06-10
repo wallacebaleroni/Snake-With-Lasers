@@ -33,6 +33,7 @@ CONST_GRID_SIZE_Y = 0
 CONST_GRID_LENGTH_X = 0
 CONST_GRID_LENGTH_Y = 0
 
+CONST_WALL_PATH = "..\img\wall.png"
 CONST_HEAD_PATH = "..\img\head.png"
 CONST_BODY_PATH = "..\img\/body.png"
 CONST_TAIL_PATH = "..\img\/tail.png"
@@ -72,6 +73,18 @@ class Snake:
         CONST_WINDOW_W = window_w
 
         # Initializations
+        # Creates walls
+        self.walls = []
+        for i in range(size_grid_x):
+            for j in range(size_grid_y):
+                if i != 0 and i != size_grid_y - 1:
+                    if j != 0 and j != size_grid_x - 1:
+                        continue
+                new_wall = Sprite(CONST_WALL_PATH, 1)
+                wall_pos_pixel = to_pixel([i, j])
+                new_wall.set_position(wall_pos_pixel[X], wall_pos_pixel[Y])
+                self.walls.append(new_wall)
+
         # Creating snake's parts and initializating it's positions and headings
         start_pos_grid = [int(size_grid_x / 2), int(size_grid_y / 2)]
         self.head = Body(Sprite(CONST_HEAD_PATH, 4), CONST_UP, start_pos_grid)
@@ -116,8 +129,8 @@ class Snake:
         if self.current_time - self.last_move >= self.speed:
             self.move()
             self.check_borders()
-            # TODO: self.check_collision()
-            # TODO: self.check_wall()
+            self.check_collision()
+            self.check_wall()
 
             # Updates last move
             self.last_move = self.current_time
@@ -162,6 +175,18 @@ class Snake:
         elif self.head.pos_grid[Y] >= CONST_GRID_SIZE_Y:
             self.head.pos_grid[Y] = -1
             self.head.pos_pixel = to_pixel(self.head.pos_grid)
+
+    def check_collision(self):
+        for body in self.bodies:
+            if self.head.pos_grid == body.pos_grid:
+                self.game_over = True
+                print("Self Hit!")
+
+    def check_wall(self):
+        for wall in self.walls:
+            if Collision.collided(self.head.sprite, wall):
+                self.game_over = True
+                print("Wall Hit!")
 
     def move(self):
         # Updates tail position
@@ -221,6 +246,7 @@ class Snake:
                 # Snake dies
                 else:
                     self.game_over = True
+                    print("Block Hit!")
 
     def increase_size(self):
         # Get tail position then shift it
@@ -245,7 +271,12 @@ class Snake:
                 rand_pos_x = random.randint(0, CONST_GRID_LENGTH_X)
                 rand_pos_y = random.randint(0, CONST_GRID_LENGTH_Y)
 
-                # Checks if it isn't in the line of movement of the snake
+                # Checks if it's not on the walls
+                if (rand_pos_x == 0 or rand_pos_x == CONST_GRID_SIZE_X - 1
+                        or rand_pos_y == 0 or rand_pos_y == CONST_GRID_SIZE_Y - 1):
+                    valid = False
+
+                # Checks if it's not in the line of movement of the snake
                 snake_direction = self.head.direction
                 snake_pos_x = self.head.pos_grid[X]
                 snake_pos_y = self.head.pos_grid[Y]
@@ -298,6 +329,13 @@ class Snake:
                         self.shots.remove(shot)
                         block.destroy()
 
+        # Check wall hits
+        for shot in self.shots:
+            for wall in self.walls:
+                if Collision.collided(shot.sprite, wall):
+                    self.shots.remove(shot)
+                    self.walls.remove(wall)
+
         # Shots cleaning
         for shot in self.shots:
             if (shot.sprite.x >= CONST_WINDOW_W or shot.sprite.x <= 0 or
@@ -305,6 +343,9 @@ class Snake:
                 self.shots.remove(shot)
 
     def draw(self):
+        # Draw walls
+        for wall in self.walls:
+            wall.draw()
         # Draw head
         self.head.draw()
         # Draw bodies
