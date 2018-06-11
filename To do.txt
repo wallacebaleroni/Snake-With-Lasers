@@ -1,4 +1,0 @@
-- Implementar corpo
-- Draw e update terao que operacionar na lista de corpos
-- Cada corpo tera sua posicao
-- Variavel sprite deve sumir
