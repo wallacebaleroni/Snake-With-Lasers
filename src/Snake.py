@@ -436,7 +436,7 @@ class Laser:
     def __init__(self, head: Body, current_time, super_laser):
         # Initializations
         if super_laser:
-            self.sprite = Sprite(CONST_SUPER_LASER_PATH, 1)
+            self.sprite = Sprite(CONST_SUPER_LASER_PATH, 8)
         else:
             self.sprite = Sprite(CONST_LASER_PATH, 8)
         self.direction = head.direction
