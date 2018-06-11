@@ -4,7 +4,7 @@ from PPlay.collision import *
 
 import random
 
-# Directions constraints
+# Constraints
 CONST_UP = 0
 CONST_RIGHT = 1
 CONST_DOWN = 2
@@ -17,6 +17,10 @@ CONST_UP_RIGHT = 7
 
 CONST_SPRITE_W = 25
 CONST_SPRITE_H = 25
+
+CONST_RUNNING = 0
+CONST_NEXT_LEVEL = 1
+CONST_DEAD = 2
 
 CONST_PLUS_ONE = 1
 CONST_SPEED_DOWN = 2
@@ -44,19 +48,7 @@ CONST_POWER_UP_PATH = "..\img\/pup.png"
 
 
 class Snake:
-    # Objetos do PPlay/janela
-    window_w = None
-    window_h = None
-    head = None
-    keyboard = None
-
-    # Variaveis de espaco
-    speed = 200
-
-    # Corpo da cobra
-    bodies = []
-
-    def __init__(self, window_w, window_h, size_grid_x, size_grid_y):
+    def __init__(self, window_w, window_h, size_grid_x, size_grid_y, current_level):
         # Constants
         global CONST_GRID_SIZE_X
         global CONST_GRID_SIZE_Y
@@ -74,6 +66,7 @@ class Snake:
         CONST_WINDOW_W = window_w
 
         # Initializations
+
         # Creates walls
         self.walls = []
         for i in range(size_grid_x):
@@ -81,15 +74,14 @@ class Snake:
                 if i != 0 and i != size_grid_y - 1:
                     if j != 0 and j != size_grid_x - 1:
                         continue
-                new_wall = Sprite(CONST_WALL_PATH, 1)
-                wall_pos_pixel = to_pixel([i, j])
-                new_wall.set_position(wall_pos_pixel[X], wall_pos_pixel[Y])
+                new_wall = Wall(i, j)
                 self.walls.append(new_wall)
 
-        # Creating snake's parts and initializating it's positions and headings
+        # Creating snake's parts and initializing it's positions and headings
         start_pos_grid = [int(size_grid_x / 2), int(size_grid_y / 2)]
         self.head = Body(Sprite(CONST_HEAD_PATH, 4), CONST_UP, start_pos_grid)
 
+        self.bodies = []
         body_pos_grid = [start_pos_grid[X], start_pos_grid[Y] + 1]
         body = Body(Sprite(CONST_BODY_PATH, 8), CONST_UP, body_pos_grid)
         self.bodies.append(body)
@@ -97,31 +89,43 @@ class Snake:
         tail_pos_grid = [body_pos_grid[X], body_pos_grid[Y] + 1]
         self.tail = Body(Sprite(CONST_TAIL_PATH, 4), CONST_UP, tail_pos_grid)
 
+        # Snake speed
+        self.speed = 200 * (current_level * 100)
+
         # Self explanatory
         self.keyboard = Keyboard()
 
         # Flags
         self.direction_input_got = False
-        self.shot_flag = False
+        self.laser_flag = False
 
         # Time variables
         self.current_time = 0
         self.last_move = 0
         self.last_append = 0
-        self.last_shot = 0
+        self.last_laser = 0
         self.last_spawn = 0
+        self.s_laser_start = 0
+        self.s_laser_timeout = 10000
+        # TODO: fazer o da velocidade
 
         # Blocks variables
         self.blocks = []
         self.block_spawn_time = 2000
 
-        # Shots variables
-        self.shots = []
-        self.shot_cadence = 200
-        self.super_laser_active = False
+        # Lasers variables
+        self.lasers = []
+        self.laser_cadence = 400
+        self.s_laser_cadence = 800
+        self.s_laser_active = False
+
+        # Score
+        self.current_level = current_level
+        self.score = 0
+
 
         # Game Over flag
-        self.game_over = False
+        self.game_over = CONST_RUNNING
 
     def run(self, total_time):
         self.current_time = total_time
@@ -140,7 +144,7 @@ class Snake:
             self.direction_input_got = False
         self.interactions()
         self.spawn_blocks()
-        self.shot()
+        self.laser()
 
         # return self.game_over
 
@@ -160,9 +164,9 @@ class Snake:
                 self.direction_input_got = True
                 self.head.direction = CONST_RIGHT
 
-        # Shot key
+        # Laser key
         if self.keyboard.key_pressed("space"):
-            self.shot_flag = True
+            self.laser_flag = True
 
     def check_borders(self):
         if self.head.pos_grid[X] < 0:
@@ -181,13 +185,13 @@ class Snake:
     def check_collision(self):
         for body in self.bodies:
             if self.head.pos_grid == body.pos_grid:
-                self.game_over = True
+                self.game_over = CONST_DEAD
                 print("Self Hit!")
 
     def check_wall(self):
         for wall in self.walls:
-            if Collision.collided(self.head.sprite, wall):
-                self.game_over = True
+            if Collision.collided(self.head.sprite, wall.sprite):
+                self.game_over = CONST_DEAD
                 print("Wall Hit!")
 
     def move(self):
@@ -243,22 +247,33 @@ class Snake:
             if self.head.pos_grid == block.pos_grid:
                 # Snake will eat it
                 if block.destroyed:
+                    # TODO: fazer o da velocidade
                     if block.power_up:
-                        self.super_laser_active = True
+                        self.s_laser_active = True
+                        self.s_laser_start = self.current_time
                     else:
                         self.increase_size()
                     self.blocks.remove(block)
                 # Snake dies
                 else:
-                    self.game_over = True
+                    self.game_over = CONST_DEAD
                     print("Block Hit!")
 
+        # Check timeouts
+        if self.s_laser_active and (self.current_time - self.s_laser_start >= self.s_laser_timeout):
+            self.s_laser_active = False
+        # TODO: fazer o da velocidade
+
     def increase_size(self):
+        # Increase score
+        self.score += self.current_level * 10
+
         # Get tail position then shift it
         tail_pos_grid = [self.tail.pos_grid[X], self.tail.pos_grid[Y]]
         tail_direction = self.tail.direction
         self.tail.move_back()
 
+        # Put new body where the tail was
         sprite = Sprite(CONST_BODY_PATH, 8)
         sprite.set_curr_frame(tail_direction)
         new_body = Body(sprite, tail_direction, tail_pos_grid)
@@ -315,40 +330,44 @@ class Snake:
 
             self.last_spawn = self.current_time
 
-    def shot(self):
-        # Checks the need of creating a shot
-        if self.shot_flag and self.current_time - self.last_shot >= self.shot_cadence:
-            # Create shot sprite
-            new_shot = Laser(self.head, self.current_time, self.super_laser_active)
-            self.shots.append(new_shot)
+    def laser(self):
+        # Checks the need of creating a laser
+        cadence = self.s_laser_cadence if self.s_laser_active else self.laser_cadence
+        if self.laser_flag and self.current_time - self.last_laser >= cadence:
+            # Create laser sprite
+            new_laser = Laser(self.head, self.current_time, self.s_laser_active)
+            self.lasers.append(new_laser)
             # Create it in front of the head
-            self.shot_flag = False
-            self.last_shot = self.current_time
+            self.laser_flag = False
+            self.last_laser = self.current_time
 
-        # Move shots
-        for shot in self.shots:
-            shot.run(self.current_time)
+        # Move lasers
+        for laser in self.lasers:
+            laser.run(self.current_time)
 
         # Check block hits
-        for shot in self.shots:
+        for laser in self.lasers:
             for block in self.blocks:
                 if not block.destroyed:
-                    if Collision.collided(shot.sprite, block.sprite):
-                        self.shots.remove(shot)
+                    if Collision.collided(laser.sprite, block.sprite):
+                        self.lasers.remove(laser)
                         block.destroy()
 
         # Check wall hits
-        for shot in self.shots:
+        for laser in self.lasers:
             for wall in self.walls:
-                if Collision.collided(shot.sprite, wall):
-                    self.shots.remove(shot)
-                    self.walls.remove(wall)
+                if Collision.collided(laser.sprite, wall.sprite):
+                    self.lasers.remove(laser)
+                    if laser.s_laser:
+                        wall.hit()
+                        if wall.health == 0:
+                            self.walls.remove(wall)
 
-        # Shots cleaning
-        for shot in self.shots:
-            if (shot.sprite.x >= CONST_WINDOW_W or shot.sprite.x <= 0 or
-                    shot.sprite.y >= CONST_WINDOW_H or shot.sprite.y <= 0):
-                self.shots.remove(shot)
+        # Lasers cleaning
+        for laser in self.lasers:
+            if (laser.sprite.x >= CONST_WINDOW_W or laser.sprite.x <= 0 or
+                    laser.sprite.y >= CONST_WINDOW_H or laser.sprite.y <= 0):
+                self.lasers.remove(laser)
 
     def draw(self):
         # Draw walls
@@ -364,9 +383,16 @@ class Snake:
         # Draw blocks
         for block in self.blocks:
             block.draw()
-        # Draw shots
-        for shot in self.shots:
-            shot.draw()
+        # Draw lasers
+        for laser in self.lasers:
+            laser.draw()
+
+    def get_score(self):
+        return self.score
+
+    # TODO: fazer o da velocidade
+    def get_laser_timeout(self):
+        return self.current_time - self.s_laser_start
 
 
 def decide_bodies_frames(curr, next):
@@ -433,9 +459,10 @@ class Body:
 
 
 class Laser:
-    def __init__(self, head: Body, current_time, super_laser):
+    def __init__(self, head: Body, current_time, s_laser):
         # Initializations
-        if super_laser:
+        self.s_laser = s_laser
+        if s_laser:
             self.sprite = Sprite(CONST_SUPER_LASER_PATH, 8)
         else:
             self.sprite = Sprite(CONST_LASER_PATH, 8)
@@ -480,7 +507,7 @@ class Laser:
         self.update_frames()
 
     def move(self):
-        # Moves the shot depending on it's direction
+        # Moves the laser depending on it's direction
         if self.direction == CONST_UP:
             self.sprite.set_position(self.sprite.x, self.sprite.y - self.speed * self.delta_time)
         elif self.direction == CONST_DOWN:
@@ -523,3 +550,21 @@ class Block:
     def destroy(self):
         self.destroyed = True
         self.sprite.set_curr_frame(1)
+
+
+class Wall:
+    def __init__(self, pos_grid):
+        self.pos_grid = pos_grid
+        self.pos_pixel = to_pixel(pos_grid)
+
+        self.sprite = Sprite(CONST_WALL_PATH, 1)
+        self.sprite.set_position(self.pos_pixel[X], self.pos_pixel[Y])
+
+        self.health = 3
+
+    def hit(self):
+        self.health -= 1
+        # TODO: outros sprites da parede
+
+    def draw(self):
+        self.sprite.draw()
