@@ -40,7 +40,6 @@ CONST_TAIL_PATH = "..\img\/tail.png"
 CONST_LASER_PATH = "..\img\/laser.png"
 CONST_SUPER_LASER_PATH = "..\img\/slaser.png"
 CONST_BLOCK_PATH = "..\img\/block.png"
-CONST_PLUS_ONE_PATH = "..\img\/plus_one.png"
 CONST_POWER_UP_PATH = "..\img\/pup.png"
 
 
@@ -509,9 +508,9 @@ class Block:
 
         self.power_up = power_up
         if power_up:
-            self.sprite = Sprite(CONST_POWER_UP_PATH, 1)
+            self.sprite = Sprite(CONST_POWER_UP_PATH, 2)
         else:
-            self.sprite = Sprite(CONST_BLOCK_PATH, 1)
+            self.sprite = Sprite(CONST_BLOCK_PATH, 2)
         self.sprite.set_position(self.pos_pixel[X], self.pos_pixel[Y])
 
         self.destroyed = False
@@ -523,6 +522,4 @@ class Block:
 
     def destroy(self):
         self.destroyed = True
-        # TODO: power up destroyed
-        self.sprite = Sprite(CONST_PLUS_ONE_PATH, 1)
-        self.sprite.set_position(self.pos_pixel[X], self.pos_pixel[Y])
+        self.sprite.set_curr_frame(1)
