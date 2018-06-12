@@ -21,9 +21,11 @@ CONST_SPRITE_H = 25
 CONST_RUNNING = 0
 CONST_NEXT_LEVEL = 1
 CONST_DEAD = 2
+CONST_QUIT = 3
 
-CONST_PLUS_ONE = 1
-CONST_SPEED_DOWN = 2
+CONST_PLUS_ONE = 0
+CONST_S_LASER = 1
+CONST_S_SPEED = 2
 
 X = 0
 Y = 1
@@ -44,7 +46,8 @@ CONST_TAIL_PATH = "..\img\/tail.png"
 CONST_LASER_PATH = "..\img\/laser.png"
 CONST_SUPER_LASER_PATH = "..\img\/slaser.png"
 CONST_BLOCK_PATH = "..\img\/block.png"
-CONST_POWER_UP_PATH = "..\img\/pup.png"
+CONST_S_LASER_BLOCK_PATH = "..\img\/slaserblock.png"
+CONST_S_SPEED_BLOCK_PATH = "..\img\/sspeedblock.png"
 
 
 class Snake:
@@ -65,8 +68,6 @@ class Snake:
         CONST_WINDOW_H = window_h
         CONST_WINDOW_W = window_w
 
-        # Initializations
-
         # Creates walls
         self.walls = []
         for i in range(size_grid_x):
@@ -74,7 +75,7 @@ class Snake:
                 if i != 0 and i != size_grid_y - 1:
                     if j != 0 and j != size_grid_x - 1:
                         continue
-                new_wall = Wall(i, j)
+                new_wall = Wall([i, j])
                 self.walls.append(new_wall)
 
         # Creating snake's parts and initializing it's positions and headings
@@ -90,7 +91,7 @@ class Snake:
         self.tail = Body(Sprite(CONST_TAIL_PATH, 4), CONST_UP, tail_pos_grid)
 
         # Snake speed
-        self.speed = 200 * (current_level * 100)
+        self.speed = 200 - (current_level * 20)
 
         # Self explanatory
         self.keyboard = Keyboard()
@@ -105,9 +106,16 @@ class Snake:
         self.last_append = 0
         self.last_laser = 0
         self.last_spawn = 0
+
+        # Power up time variables
         self.s_laser_start = 0
         self.s_laser_timeout = 10000
-        # TODO: fazer o da velocidade
+        self.s_speed_start = 0
+        self.s_speed_timeout = 10000
+
+        # Power up flags
+        self.s_laser_active = False
+        self.s_speed_active = False
 
         # Blocks variables
         self.blocks = []
@@ -117,15 +125,16 @@ class Snake:
         self.lasers = []
         self.laser_cadence = 400
         self.s_laser_cadence = 800
-        self.s_laser_active = False
 
         # Score
         self.current_level = current_level
         self.score = 0
 
-
         # Game Over flag
         self.game_over = CONST_RUNNING
+
+        # Enable screen crossing
+        self.debug = False
 
     def run(self, total_time):
         self.current_time = total_time
@@ -146,7 +155,7 @@ class Snake:
         self.spawn_blocks()
         self.laser()
 
-        # return self.game_over
+        return self.game_over
 
     def get_input(self):
         if not self.direction_input_got:
@@ -165,30 +174,50 @@ class Snake:
                 self.head.direction = CONST_RIGHT
 
         # Laser key
+        laser = False
+        self.laser_flag = laser
         if self.keyboard.key_pressed("space"):
             self.laser_flag = True
 
+        # Exit key
+        if self.keyboard.key_pressed("esc"):
+            self.game_over = CONST_QUIT
+
     def check_borders(self):
-        if self.head.pos_grid[X] < 0:
-            self.head.pos_grid[X] = 19
-            self.head.pos_pixel = to_pixel(self.head.pos_grid)
-        elif self.head.pos_grid[X] >= CONST_GRID_SIZE_X:
-            self.head.pos_grid[X] = -1
-            self.head.pos_pixel = to_pixel(self.head.pos_grid)
-        elif self.head.pos_grid[Y] < 0:
-            self.head.pos_grid[Y] = 19
-            self.head.pos_pixel = to_pixel(self.head.pos_grid)
-        elif self.head.pos_grid[Y] >= CONST_GRID_SIZE_Y:
-            self.head.pos_grid[Y] = -1
-            self.head.pos_pixel = to_pixel(self.head.pos_grid)
+        # Allows screen crossing
+        if self.debug:
+            if self.head.pos_grid[X] < 0:
+                self.head.pos_grid[X] = 19
+                self.head.pos_pixel = to_pixel(self.head.pos_grid)
+            elif self.head.pos_grid[X] >= CONST_GRID_SIZE_X:
+                self.head.pos_grid[X] = -1
+                self.head.pos_pixel = to_pixel(self.head.pos_grid)
+            elif self.head.pos_grid[Y] < 0:
+                self.head.pos_grid[Y] = 19
+                self.head.pos_pixel = to_pixel(self.head.pos_grid)
+            elif self.head.pos_grid[Y] >= CONST_GRID_SIZE_Y:
+                self.head.pos_grid[Y] = -1
+                self.head.pos_pixel = to_pixel(self.head.pos_grid)
+
+        # Checks next stage
+        if self.tail.pos_grid[X] < 0:
+            self.game_over = self.score
+        elif self.tail.pos_grid[X] >= CONST_GRID_SIZE_X:
+            self.game_over = self.score
+        elif self.tail.pos_grid[Y] < 0:
+            self.game_over = self.score
+        elif self.tail.pos_grid[Y] >= CONST_GRID_SIZE_Y:
+            self.game_over = self.score
 
     def check_collision(self):
+        # Check collision with itself
         for body in self.bodies:
             if self.head.pos_grid == body.pos_grid:
                 self.game_over = CONST_DEAD
                 print("Self Hit!")
 
     def check_wall(self):
+        # Check wall colission
         for wall in self.walls:
             if Collision.collided(self.head.sprite, wall.sprite):
                 self.game_over = CONST_DEAD
@@ -247,10 +276,12 @@ class Snake:
             if self.head.pos_grid == block.pos_grid:
                 # Snake will eat it
                 if block.destroyed:
-                    # TODO: fazer o da velocidade
-                    if block.power_up:
+                    if block.power_up == CONST_S_LASER:
                         self.s_laser_active = True
                         self.s_laser_start = self.current_time
+                    elif block.power_up == CONST_S_SPEED:
+                        self.s_speed_active = True
+                        self.s_speed_start = self.current_time
                     else:
                         self.increase_size()
                     self.blocks.remove(block)
@@ -262,7 +293,8 @@ class Snake:
         # Check timeouts
         if self.s_laser_active and (self.current_time - self.s_laser_start >= self.s_laser_timeout):
             self.s_laser_active = False
-        # TODO: fazer o da velocidade
+        if self.s_speed_active and (self.current_time - self.s_speed_start >= self.s_speed_timeout):
+            self.s_speed_active = False
 
     def increase_size(self):
         # Increase score
@@ -320,9 +352,10 @@ class Snake:
                         valid = False
 
             # 25% chance of being a power up
-            power_up = False
+            power_up = 0
             if random.randint(0, 3) == 0:
-                power_up = True
+                # 50% chance of being super laser and 50% of being slow speed
+                power_up = random.randint(1, 2)
 
             # Creates the block
             new_block = Block([rand_pos_x, rand_pos_y], power_up)
@@ -350,7 +383,8 @@ class Snake:
             for block in self.blocks:
                 if not block.destroyed:
                     if Collision.collided(laser.sprite, block.sprite):
-                        self.lasers.remove(laser)
+                        if not laser.s_laser:
+                            self.lasers.remove(laser)
                         block.destroy()
 
         # Check wall hits
@@ -390,9 +424,11 @@ class Snake:
     def get_score(self):
         return self.score
 
-    # TODO: fazer o da velocidade
+    def get_speed_timeout(self):
+        return self.s_speed_timeout - (self.current_time - self.s_speed_start) if self.s_speed_active else 0
+
     def get_laser_timeout(self):
-        return self.current_time - self.s_laser_start
+        return self.s_laser_timeout - (self.current_time - self.s_laser_start) if self.s_laser_active else 0
 
 
 def decide_bodies_frames(curr, next):
@@ -529,20 +565,22 @@ class Laser:
 
 
 class Block:
-    def __init__(self, pos_grid, power_up):
+    def __init__(self, pos_grid, block_type):
         self.pos_grid = pos_grid
         self.pos_pixel = to_pixel(pos_grid)
 
-        self.power_up = power_up
-        if power_up:
-            self.sprite = Sprite(CONST_POWER_UP_PATH, 2)
+        self.power_up = block_type
+        if block_type == CONST_S_LASER:
+            self.sprite = Sprite(CONST_S_LASER_BLOCK_PATH, 2)
+        elif block_type == CONST_S_SPEED:
+            self.sprite = Sprite(CONST_S_SPEED_BLOCK_PATH, 2)
         else:
             self.sprite = Sprite(CONST_BLOCK_PATH, 2)
         self.sprite.set_position(self.pos_pixel[X], self.pos_pixel[Y])
 
         self.destroyed = False
 
-        self.type = CONST_PLUS_ONE
+        self.type = block_type
 
     def draw(self):
         self.sprite.draw()
@@ -557,14 +595,15 @@ class Wall:
         self.pos_grid = pos_grid
         self.pos_pixel = to_pixel(pos_grid)
 
-        self.sprite = Sprite(CONST_WALL_PATH, 1)
-        self.sprite.set_position(self.pos_pixel[X], self.pos_pixel[Y])
-
         self.health = 3
+
+        self.sprite = Sprite(CONST_WALL_PATH, 3)
+        self.sprite.set_curr_frame(3 - self.health)
+        self.sprite.set_position(self.pos_pixel[X], self.pos_pixel[Y])
 
     def hit(self):
         self.health -= 1
-        # TODO: outros sprites da parede
+        self.sprite.set_curr_frame(3 - self.health)
 
     def draw(self):
         self.sprite.draw()
