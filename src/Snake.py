@@ -282,6 +282,7 @@ class Snake:
                     elif block.power_up == CONST_S_SPEED:
                         self.s_speed_active = True
                         self.s_speed_start = self.current_time
+                        self.speed += 50
                     else:
                         self.increase_size()
                     self.blocks.remove(block)
@@ -294,6 +295,7 @@ class Snake:
         if self.s_laser_active and (self.current_time - self.s_laser_start >= self.s_laser_timeout):
             self.s_laser_active = False
         if self.s_speed_active and (self.current_time - self.s_speed_start >= self.s_speed_timeout):
+            self.speed -= 50
             self.s_speed_active = False
 
     def increase_size(self):
