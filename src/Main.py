@@ -104,7 +104,6 @@ def game():
             pass
         elif game_over == CONST_DEAD:
             set_ranking(score)
-            break
         elif game_over == CONST_QUIT:
             break
         else:
@@ -115,31 +114,42 @@ def game():
                 break
             snake = Snake(CONST_WINDOW_SIZE_X, CONST_WINDOW_SIZE_Y, CONST_GRID_SIZE_X, CONST_GRID_SIZE_Y, current_level, score)
 
-        game_window.set_background_color((0, 0, 0))
-        snake.draw()
-
-        # Draw HUD
-        score = snake.get_score()
-        game_window.draw_text("Score: " + str(score), 5, 4, color=(255, 255, 255))
-        game_window.draw_text("Level " + str(current_level), CONST_WINDOW_SIZE_X / 2 - 20, 4, color=(255, 255, 255))
-        sl_timeout = snake.get_laser_timeout()
-        if sl_timeout != 0:
-            game_window.draw_text("Super Laser: " + str(int(sl_timeout / 1000)), CONST_WINDOW_SIZE_X - 85, 4,
-                                  color=(255, 255, 255))
-        sp_timeout = snake.get_speed_timeout()
-        if sp_timeout != 0:
-            game_window.draw_text("Slow Speed: " + str(int(sp_timeout / 1000)), CONST_WINDOW_SIZE_X - 155, 4,
-                                  color=(255, 255, 255))
+        # Draw
+        if game_over != CONST_DEAD:
+            # Draws background
+            game_window.set_background_color((0, 0, 0))
+            # Draws snake
+            snake.draw()
+            # Draws score
+            score = snake.get_score()
+            game_window.draw_text("Score: " + str(score), 5, 4, color=(255, 255, 255))
+            # Draws level
+            game_window.draw_text("Level " + str(current_level), CONST_WINDOW_SIZE_X / 2 - 20, 4, color=(255, 255, 255))
+            # Draws power-ups time left
+            sl_timeout = snake.get_laser_timeout()
+            if sl_timeout != 0:
+                game_window.draw_text("Super Laser: " + str(int(sl_timeout / 1000)), CONST_WINDOW_SIZE_X - 85, 4,
+                                      color=(255, 255, 255))
+            sp_timeout = snake.get_speed_timeout()
+            if sp_timeout != 0:
+                game_window.draw_text("Slow Speed: " + str(int(sp_timeout / 1000)), CONST_WINDOW_SIZE_X - 155, 4,
+                                      color=(255, 255, 255))
+        else:
+            # Draws the game over message
+            draw_game_over()
 
         game_window.update()
 
+        # Waits a little to show the game over message
         if game_over == CONST_DEAD:
             time.sleep(2.5)
+            break
 
 
 def set_ranking(score):
     ranking_file = open("ranking.txt", "r")
 
+    # Puts the ranking in a list
     ranking = []
     while True:
         line = ranking_file.readline()
@@ -148,10 +158,12 @@ def set_ranking(score):
         ranking.append(int(line))
     ranking_file.close()
 
+    # Puts the new score in the ranking
     if score not in ranking:
         ranking.append(score)
     ranking.sort(reverse=True)
 
+    # Rewrites to the ranking file the 5 biggest
     ranking_file = open("ranking.txt", "w")
     i = 0
     while i < 5 and i < len(ranking):
