@@ -1,5 +1,6 @@
 from PPlay.keyboard import *
 from PPlay.sprite import *
+from PPlay.gameimage import *
 from PPlay.collision import *
 
 import random
@@ -18,7 +19,7 @@ CONST_UP_RIGHT = 7
 CONST_SPRITE_W = 25
 CONST_SPRITE_H = 25
 
-CONST_RUNNING = 0
+CONST_RUNNING = -1
 CONST_NEXT_LEVEL = 1
 CONST_DEAD = 2
 CONST_QUIT = 3
@@ -51,7 +52,7 @@ CONST_S_SPEED_BLOCK_PATH = "..\img\/sspeedblock.png"
 
 
 class Snake:
-    def __init__(self, window_w, window_h, size_grid_x, size_grid_y, current_level):
+    def __init__(self, window_w, window_h, size_grid_x, size_grid_y, current_level, score):
         # Constants
         global CONST_GRID_SIZE_X
         global CONST_GRID_SIZE_Y
@@ -128,7 +129,7 @@ class Snake:
 
         # Score
         self.current_level = current_level
-        self.score = 0
+        self.score = score
 
         # Game Over flag
         self.game_over = CONST_RUNNING
@@ -214,14 +215,12 @@ class Snake:
         for body in self.bodies:
             if self.head.pos_grid == body.pos_grid:
                 self.game_over = CONST_DEAD
-                print("Self Hit!")
 
     def check_wall(self):
         # Check wall colission
         for wall in self.walls:
             if Collision.collided(self.head.sprite, wall.sprite):
                 self.game_over = CONST_DEAD
-                print("Wall Hit!")
 
     def move(self):
         # Updates tail position
@@ -280,16 +279,16 @@ class Snake:
                         self.s_laser_active = True
                         self.s_laser_start = self.current_time
                     elif block.power_up == CONST_S_SPEED:
-                        self.s_speed_active = True
                         self.s_speed_start = self.current_time
-                        self.speed += 50
+                        if not self.s_speed_active:
+                            self.s_speed_active = True
+                            self.speed += 50
                     else:
                         self.increase_size()
                     self.blocks.remove(block)
                 # Snake dies
                 else:
                     self.game_over = CONST_DEAD
-                    print("Block Hit!")
 
         # Check timeouts
         if self.s_laser_active and (self.current_time - self.s_laser_start >= self.s_laser_timeout):

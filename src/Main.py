@@ -1,3 +1,5 @@
+import time
+
 from PPlay.window import *
 from PPlay.gameimage import *
 from PPlay.mouse import *
@@ -10,7 +12,7 @@ CONST_WINDOW_SIZE_Y = 400
 CONST_GRID_SIZE_X = 20
 CONST_GRID_SIZE_Y = 20
 
-CONST_RUNNING = 0
+CONST_RUNNING = -1
 CONST_NEXT_LEVEL = 1
 CONST_DEAD = 2
 CONST_QUIT = 3
@@ -21,6 +23,7 @@ CONST_MENU_RANKING_PATH = "..\img\menu\/ranking.png"
 CONST_MENU_QUIT_PATH = "..\img\menu\quit.png"
 CONST_RANKING_BACKGROUND_PATH = "..\img\menu\/ranking_background.png"
 CONST_RANKING_BACK_PATH = "..\img\menu\/back.png"
+CONST_GAME_OVER_PATH = "..\img\game_over.png"
 
 
 def main_menu():
@@ -43,7 +46,6 @@ def main_menu():
     mouse_input = Mouse()
 
     click_cooldown_time = 750
-    total_time = game_window.total_time
     last_click = 0
     just_clicked = False
     block_click = False
@@ -91,8 +93,9 @@ def game():
     game_window.set_title("Snake With Lasers")
 
     current_level = 1
+    score = 0
 
-    snake = Snake(CONST_WINDOW_SIZE_X, CONST_WINDOW_SIZE_Y, CONST_GRID_SIZE_X, CONST_GRID_SIZE_Y, current_level)
+    snake = Snake(CONST_WINDOW_SIZE_X, CONST_WINDOW_SIZE_Y, CONST_GRID_SIZE_X, CONST_GRID_SIZE_Y, current_level, score)
 
     # Game loop
     while True:
@@ -100,16 +103,17 @@ def game():
         if game_over == CONST_RUNNING:
             pass
         elif game_over == CONST_DEAD:
+            set_ranking(score)
             break
         elif game_over == CONST_QUIT:
             break
         else:
             score = game_over
-            set_ranking(score)
             current_level += 1
             if current_level > 5:
+                set_ranking(score)
                 break
-            snake = Snake(CONST_WINDOW_SIZE_X, CONST_WINDOW_SIZE_Y, CONST_GRID_SIZE_X, CONST_GRID_SIZE_Y, current_level)
+            snake = Snake(CONST_WINDOW_SIZE_X, CONST_WINDOW_SIZE_Y, CONST_GRID_SIZE_X, CONST_GRID_SIZE_Y, current_level, score)
 
         game_window.set_background_color((0, 0, 0))
         snake.draw()
@@ -128,6 +132,9 @@ def game():
                                   color=(255, 255, 255))
 
         game_window.update()
+
+        if game_over == CONST_DEAD:
+            time.sleep(2.5)
 
 
 def set_ranking(score):
@@ -197,6 +204,12 @@ def get_ranking():
     ranking_file.close()
 
     return ranking
+
+
+def draw_game_over():
+    game_over_image = GameImage(CONST_GAME_OVER_PATH)
+    game_over_image.set_position(102, 190)
+    game_over_image.draw()
 
 
 main_menu()
