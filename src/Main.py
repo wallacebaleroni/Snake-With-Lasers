@@ -24,6 +24,7 @@ CONST_MENU_QUIT_PATH = "..\img\menu\quit.png"
 CONST_RANKING_BACKGROUND_PATH = "..\img\menu\/ranking_background.png"
 CONST_RANKING_BACK_PATH = "..\img\menu\/back.png"
 CONST_GAME_OVER_PATH = "..\img\game_over.png"
+CONST_YOU_WON_PATH = "..\img\you_won.png"
 
 
 def main_menu():
@@ -111,11 +112,14 @@ def game():
             current_level += 1
             if current_level > 5:
                 set_ranking(score)
-                break
-            snake = Snake(CONST_WINDOW_SIZE_X, CONST_WINDOW_SIZE_Y, CONST_GRID_SIZE_X, CONST_GRID_SIZE_Y, current_level, score)
+            else:
+                snake = Snake(CONST_WINDOW_SIZE_X, CONST_WINDOW_SIZE_Y, CONST_GRID_SIZE_X, CONST_GRID_SIZE_Y, current_level, score)
 
         # Draw
-        if game_over != CONST_DEAD:
+        if current_level > 5:
+            # Draws the you won message
+            draw_you_won()
+        elif game_over != CONST_DEAD:
             # Draws background
             game_window.set_background_color((0, 0, 0))
             # Draws snake
@@ -140,8 +144,8 @@ def game():
 
         game_window.update()
 
-        # Waits a little to show the game over message
-        if game_over == CONST_DEAD:
+        # Waits a little to show the message
+        if game_over == CONST_DEAD or current_level > 5:
             time.sleep(2.5)
             break
 
@@ -165,7 +169,7 @@ def set_ranking(score):
 
     # Rewrites to the ranking file the 5 biggest
     ranking_file = open("ranking.txt", "w")
-    i = 0
+    i = 0   
     while i < 5 and i < len(ranking):
         ranking_file.write(str(ranking[i]) + "\n")
         i += 1
@@ -222,6 +226,12 @@ def draw_game_over():
     game_over_image = GameImage(CONST_GAME_OVER_PATH)
     game_over_image.set_position(102, 190)
     game_over_image.draw()
+
+
+def draw_you_won():
+    you_won_image = GameImage(CONST_YOU_WON_PATH)
+    you_won_image.set_position(124, 190)
+    you_won_image.draw()
 
 
 main_menu()
