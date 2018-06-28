@@ -135,7 +135,7 @@ class Snake:
         self.game_over = CONST_RUNNING
 
         # Enable screen crossing
-        self.debug = False
+        self.god_mode = False
 
     def run(self, total_time):
         self.current_time = total_time
@@ -144,9 +144,10 @@ class Snake:
         # Checks if the necessary time has already passed
         if self.current_time - self.last_move >= self.speed:
             self.move()
-            self.check_borders()
-            self.check_collision()
-            self.check_wall()
+            if not self.god_mode:
+                self.check_borders()
+                self.check_collision()
+                self.check_wall()
 
             # Updates last move
             self.last_move = self.current_time
@@ -186,7 +187,7 @@ class Snake:
 
     def check_borders(self):
         # Allows screen crossing
-        if self.debug:
+        if self.god_mode:
             if self.head.pos_grid[X] < 0:
                 self.head.pos_grid[X] = 19
                 self.head.pos_pixel = to_pixel(self.head.pos_grid)
@@ -274,7 +275,7 @@ class Snake:
         for block in self.blocks:
             if self.head.pos_grid == block.pos_grid:
                 # Snake will eat it
-                if block.destroyed:
+                if block.destroyed or self.god_mode:
                     if block.power_up == CONST_S_LASER:
                         self.s_laser_active = True
                         self.s_laser_start = self.current_time
