@@ -4,11 +4,11 @@ A game inspired by the classic Snake. Developed using PPlay, a game library base
 
 ## Running The Game
 
-You should have Pygame installed on your computer, to do so simply run this in you console:
+You should have Pygame installed on your computer. To do so simply run this in you console:
 ```
 pip install pygame
 ```
-To run the game you have to run the Main.py file located in src/ with a Python interpreter.
+To run the game you have to execute the file Main.py located in src/ with a Python interpreter.
 
 ## Instruction
 
@@ -22,6 +22,3 @@ To run the game you have to run the Main.py file located in src/ with a Python i
 Here's a screen capture of the game with basically everything it has to offer:
 
 ![Screen Capture](/img/readme/screen_capture.png)
-
-<br /><br />
-Hope you will enjoy it.
