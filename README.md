@@ -20,7 +20,8 @@ To run the game you have to run the Main.py file located in src/ with a Python i
 ## Screen Capture
 
 Here's a screen capture of the game with basically everything it has to offer:
-![Screen Capture](https://github.com/wallacebaleroni/Snake-With-Lasers/tree/master/img/readme/screen_capture.png)
+
+![Screen Capture](/img/readme/screen_capture.png)
 
 
 
