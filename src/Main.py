@@ -23,8 +23,8 @@ CONST_MENU_RANKING_PATH = "..\img\menu\/ranking.png"
 CONST_MENU_QUIT_PATH = "..\img\menu\quit.png"
 CONST_RANKING_BACKGROUND_PATH = "..\img\menu\/ranking_background.png"
 CONST_RANKING_BACK_PATH = "..\img\menu\/back.png"
-CONST_GAME_OVER_PATH = "..\img\game_over.png"
-CONST_YOU_WON_PATH = "..\img\you_won.png"
+CONST_GAME_OVER_PATH = "..\img\game\game_over.png"
+CONST_YOU_WON_PATH = "..\img\game\you_won.png"
 
 
 def main_menu():

@@ -40,15 +40,15 @@ CONST_GRID_SIZE_Y = 0
 CONST_GRID_LENGTH_X = 0
 CONST_GRID_LENGTH_Y = 0
 
-CONST_WALL_PATH = "..\img\wall.png"
-CONST_HEAD_PATH = "..\img\head.png"
-CONST_BODY_PATH = "..\img\/body.png"
-CONST_TAIL_PATH = "..\img\/tail.png"
-CONST_LASER_PATH = "..\img\/laser.png"
-CONST_SUPER_LASER_PATH = "..\img\/slaser.png"
-CONST_BLOCK_PATH = "..\img\/block.png"
-CONST_S_LASER_BLOCK_PATH = "..\img\/slaserblock.png"
-CONST_S_SPEED_BLOCK_PATH = "..\img\/sspeedblock.png"
+CONST_WALL_PATH = "..\img\game\wall.png"
+CONST_HEAD_PATH = "..\img\game\head.png"
+CONST_BODY_PATH = "..\img\game\/body.png"
+CONST_TAIL_PATH = "..\img\game\/tail.png"
+CONST_LASER_PATH = "..\img\game\/laser.png"
+CONST_SUPER_LASER_PATH = "..\img\game\/slaser.png"
+CONST_BLOCK_PATH = "..\img\game\/block.png"
+CONST_S_LASER_BLOCK_PATH = "..\img\game\/slaserblock.png"
+CONST_S_SPEED_BLOCK_PATH = "..\img\game\/sspeedblock.png"
 
 
 class Snake:
