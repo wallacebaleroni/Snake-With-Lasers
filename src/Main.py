@@ -4,7 +4,7 @@ from PPlay.window import *
 from PPlay.gameimage import *
 from PPlay.mouse import *
 
-from src.Snake import *
+from Snake import *
 
 CONST_WINDOW_SIZE_X = 400
 CONST_WINDOW_SIZE_Y = 400
