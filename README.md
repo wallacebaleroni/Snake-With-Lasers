@@ -23,8 +23,5 @@ Here's a screen capture of the game with basically everything it has to offer:
 
 ![Screen Capture](/img/readme/screen_capture.png)
 
-
-
-
-
+<br /><br />
 Hope you will enjoy it.
